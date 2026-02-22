@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
   if (text === "/start") {
     await fetch(
-      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
+      `https://api.telegram.org/bot${process.env.8090861600:AAHrDIxsa4bXZAqXQX7Ko9sH2Vmq5iNGEzU}/sendMessage`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
