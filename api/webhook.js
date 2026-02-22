@@ -1,4 +1,6 @@
-export default async function handler(req, res) {
+const https = require("https");
+
+module.exports = async function (req, res) {
   if (req.method !== "POST") {
     return res.status(200).send("MrX-Stor Webhook Ready");
   }
@@ -13,30 +15,37 @@ export default async function handler(req, res) {
   const text = body.message.text;
 
   if (text === "/start") {
-    await fetch(
-      `https://api.telegram.org/bot${process.env.8090861600:AAHrDIxsa4bXZAqXQX7Ko9sH2Vmq5iNGEzU}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: "مرحباً بك في MrX-Stor 🚀",
-          reply_markup: {
-            inline_keyboard: [
-              [
-                {
-                  text: "🛒 فتح المتجر",
-                  web_app: {
-                    url: "https://mrx-store.vercel.app"
-                  }
-                }
-              ]
-            ]
-          }
-        })
+    const data = JSON.stringify({
+      chat_id: chatId,
+      text: "مرحباً بك في MrX-Stor 🚀",
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: "🛒 فتح المتجر",
+              web_app: {
+                url: "https://mrx-store.vercel.app"
+              }
+            }
+          ]
+        ]
       }
-    );
+    });
+
+    const options = {
+      hostname: "api.telegram.org",
+      path: `/bot${process.env.8090861600:AAHrDIxsa4bXZAqXQX7Ko9sH2Vmq5iNGEzU}/sendMessage`,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": data.length
+      }
+    };
+
+    const request = https.request(options);
+    request.write(data);
+    request.end();
   }
 
   return res.status(200).json({ ok: true });
-}
+};
