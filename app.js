@@ -1,130 +1,166 @@
+// ======================
+// تهيئة
+// ======================
+
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-const container = document.getElementById("products");;
-
 // ======================
-// عرض المنتجات
+// جلب المنتجات
 // ======================
-async function showProducts() {
-  const res = await fetch("/api/products");
-  const products = await res.json();
 
-  container.innerHTML = "<h2>المنتجات</h2>";
+async function loadProducts() {
+  try {
+    const response = await fetch("/api/products");
+    const products = await response.json();
 
-  products.forEach(product => {
-    container.innerHTML += `
-      <div style="border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:10px;">
+    const container = document.getElementById("products");
+    container.innerHTML = "";
+
+    products.forEach(product => {
+      const div = document.createElement("div");
+      div.className = "product";
+      div.innerHTML = `
         <h3>${product.name}</h3>
         <p>السعر: $${product.price}</p>
         <button onclick="addToCart(${product.id}, '${product.name}', ${product.price})">
           إضافة إلى السلة
         </button>
-      </div>
-    `;
-  });
+      `;
+      container.appendChild(div);
+    });
 
-  container.innerHTML += `
-    <button onclick="showCart()" style="margin-top:20px;">
-      عرض السلة (${cart.length})
-    </button>
-  `;
+  } catch (error) {
+    console.error("خطأ في تحميل المنتجات:", error);
+  }
 }
 
 // ======================
-// إضافة إلى السلة
+// إضافة للسلة
 // ======================
+
 function addToCart(id, name, price) {
-  const existing = cart.find(item => item.id === id);
-
-  if (existing) {
-    existing.qty += 1;
-  } else {
-    cart.push({ id, name, price, qty: 1 });
-  }
-
+  cart.push({ id, name, price });
   localStorage.setItem("cart", JSON.stringify(cart));
-  alert("تمت الإضافة إلى السلة");
-  showProducts();
+  alert("تمت الإضافة للسلة ✅");
+}
+
+// ======================
+// عرض المنتجات
+// ======================
+
+function showProducts() {
+  loadProducts();
 }
 
 // ======================
 // عرض السلة
 // ======================
+
 function showCart() {
+  const container = document.getElementById("products");
+  container.innerHTML = "<h2>السلة</h2>";
+
   if (cart.length === 0) {
-    container.innerHTML = `
-      <h2>السلة فارغة</h2>
-      <button onclick="showProducts()">رجوع</button>
-    `;
+    container.innerHTML += "<p>السلة فارغة</p>";
     return;
   }
 
   let total = 0;
 
-  container.innerHTML = "<h2>سلة المشتريات</h2>";
-
   cart.forEach(item => {
-    total += item.price * item.qty;
-
+    total += item.price;
     container.innerHTML += `
-      <div style="border:1px solid #ddd;padding:15px;margin:10px 0;border-radius:10px;">
+      <div class="product">
         <h3>${item.name}</h3>
-        <p>الكمية: ${item.qty}</p>
-        <p>المجموع: $${item.price * item.qty}</p>
+        <p>السعر: $${item.price}</p>
       </div>
     `;
   });
 
-  container.innerHTML += `
-    <h3>الإجمالي: $${total}</h3>
+  container.innerHTML += `<h3>الإجمالي: $${total}</h3>`;
 
-    <button onclick="checkout()" 
-      style="margin-top:20px;padding:10px 15px;background:#22c55e;color:white;border:none;border-radius:8px;">
+  container.innerHTML += `
+    <button onclick="checkout()">
       إتمام الطلب
     </button>
-
-    <br><br>
-    <button onclick="showProducts()">رجوع</button>
   `;
 }
 
 // ======================
 // إتمام الطلب
 // ======================
+
 async function checkout() {
   if (cart.length === 0) {
     alert("السلة فارغة");
     return;
   }
 
-  const user = window.Telegram?.WebApp?.initDataUnsafe?.user || {};
-
   try {
-    const res = await fetch("/api/create-order", {
+    const response = await fetch("/api/orders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ cart, user })
+      body: JSON.stringify({
+        items: cart,
+        date: new Date().toISOString()
+      })
     });
 
-    const data = await res.json();
-
-    if (data.success) {
-      alert("تم إرسال الطلب بنجاح ✅");
-      cart = [];
-      localStorage.removeItem("cart");
-      showProducts();
-    } else {
-      alert("حدث خطأ أثناء الإرسال");
+    if (!response.ok) {
+      throw new Error("فشل في إرسال الطلب");
     }
 
-  } catch (err) {
-    alert("فشل الاتصال بالسيرفر");
+    alert("تم إتمام الطلب بنجاح ✅");
+
+    // تفريغ السلة
+    cart = [];
+    localStorage.removeItem("cart");
+
+    showProducts();
+
+  } catch (error) {
+    alert("حدث خطأ أثناء إرسال الطلب ❌");
+    console.error(error);
+  }
+}
+
+// ======================
+// عرض الطلبات
+// ======================
+
+async function showOrders() {
+  const container = document.getElementById("products");
+  container.innerHTML = "<h2>طلباتي</h2>";
+
+  try {
+    const response = await fetch("/api/orders");
+    const orders = await response.json();
+
+    if (orders.length === 0) {
+      container.innerHTML += "<p>لا يوجد طلبات بعد</p>";
+      return;
+    }
+
+    orders.forEach((order, index) => {
+      container.innerHTML += `
+        <div class="product">
+          <h3>طلب رقم ${index + 1}</h3>
+          <p>التاريخ: ${new Date(order.date).toLocaleString()}</p>
+          <p>عدد المنتجات: ${order.items.length}</p>
+        </div>
+      `;
+    });
+
+  } catch (error) {
+    container.innerHTML += "<p>خطأ في تحميل الطلبات</p>";
+    console.error(error);
   }
 }
 
 // ======================
 // تشغيل أولي
 // ======================
-showProducts();
+
+loadProducts();
