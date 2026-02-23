@@ -34,7 +34,7 @@ module.exports = async function (req, res) {
 
     const options = {
       hostname: "api.telegram.org",
-      path: `/bot${process.env.BOT_TOKEN}/sendMessage`,
+      path: `/bot${process.env.8090861600:AAHrDIxsa4bXZAqXQX7Ko9sH2Vmq5iNGEzU}/sendMessage`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
