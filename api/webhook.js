@@ -1,8 +1,10 @@
 const https = require("https");
 
+const TOKEN = "8090861600:AAHrDIxsa4bXZAqXQX7Ko9sH2Vmq5iNGEzU";
+
 module.exports = async function (req, res) {
   if (req.method !== "POST") {
-    return res.status(200).send("MrX-Stor Webhook Ready");
+    return res.status(200).send("MrX-Stor Webhook جاهز");
   }
 
   const body = req.body;
@@ -34,18 +36,25 @@ module.exports = async function (req, res) {
 
     const options = {
       hostname: "api.telegram.org",
-      path: `/bot${process.env.8090861600:AAHrDIxsa4bXZAqXQX7Ko9sH2Vmq5iNGEzU}/sendMessage`,
+      path: `/bot${TOKEN}/sendMessage`,
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Content-Length": data.length
-      }
+        "Content-Length": data.length,
+      },
     };
 
-    const request = https.request(options);
-    request.write(data);
-    request.end();
+    const telegramReq = https.request(options, (telegramRes) => {
+      telegramRes.on("data", () => {});
+    });
+
+    telegramReq.on("error", (error) => {
+      console.error(error);
+    });
+
+    telegramReq.write(data);
+    telegramReq.end();
   }
 
-  return res.status(200).json({ ok: true });
+  res.status(200).json({ ok: true });
 };
